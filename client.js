@@ -93,6 +93,10 @@ window.__ModuleLoader__.load({
 .oguf-gauge { position: absolute; inset: 0; }
 .oguf-gauge-track { stroke: var(--dsw-alias-bg-layer-2); }
 .oguf-gauge-arc { stroke: currentColor; transition: stroke-dashoffset .3s ease; }
+/* No data yet (fresh start): a fixed quarter arc spins until the first snapshot. */
+.oguf-fab.oguf-loading .oguf-gauge { animation: oguf-spin .9s linear infinite; }
+@keyframes oguf-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .oguf-fab.oguf-loading .oguf-gauge { animation: none; } }
 .oguf-fab-num {
   position: relative; font-size: 11px; font-weight: 700;
   color: var(--dsw-alias-label-primary); font-variant-numeric: tabular-nums;
@@ -364,24 +368,32 @@ window.__ModuleLoader__.load({
       }
 
       const worst = worstActiveOf(data)
-      const lv = failed ? 'err' : (worst ? worst.lv : 'na')
+      // 首次快照返回前 data 为 null：显示转圈加载态，而不是空环
+      const loading = !failed && data === null
+      const lv = failed ? 'err' : (!loading && worst ? worst.lv : 'na')
       // 数字=已用%；圆环弧长=已用%；剩余量放进 tooltip
-      const pct = failed || !worst || !(worst.p >= 0) ? null : Math.round(worst.p)
+      const pct = failed || loading || !worst || !(worst.p >= 0) ? null : Math.round(worst.p)
       const arc = pct === null ? (failed ? 100 : 0) : Math.max(0, Math.min(100, pct))
       const remaining = pct === null ? null : Math.max(0, 100 - pct)
       const fabTitleText = failed
         ? t.failed
-        : pct === null
-          ? t.fabTitle
-          : `${t.title} · ${WIN_LABEL[worst.key]} ${pct}% · ${t.left} ${remaining}% · ${fmtRemain(worst.resetsAt)}`
+        : loading
+          ? t.loading
+          : pct === null
+            ? t.fabTitle
+            : `${t.title} · ${WIN_LABEL[worst.key]} ${pct}% · ${t.left} ${remaining}% · ${fmtRemain(worst.resetsAt)}`
       const flag = !failed && lv === 'err'
       const GIRTH = 2 * Math.PI * 16
+      // 加载态用一段固定弧配合 CSS 旋转；正常态用整圈 dash 表示已用比例
+      const strokeWidth = loading || lv === 'ok' ? 3 : 4.4
+      const dashArray = loading ? `${GIRTH * 0.28} ${GIRTH}` : String(GIRTH)
+      const dashOffset = loading ? 0 : GIRTH * (1 - arc / 100)
 
       return React.createElement(React.Fragment, null,
         // 常驻悬浮件：环形用量表（弧长=已用，中间数字；粗细/感叹号给出颜色之外的严重度）
         React.createElement('button', {
           ref: fabRef,
-          className: 'oguf-fab oguf-lv-' + lv + (lv === 'err' ? ' oguf-pulse' : ''),
+          className: 'oguf-fab oguf-lv-' + lv + (loading ? ' oguf-loading' : '') + (lv === 'err' ? ' oguf-pulse' : ''),
           style: posStyle,
           title: fabTitleText,
           onClick: () => setOpen(!open),
@@ -389,16 +401,16 @@ window.__ModuleLoader__.load({
           React.createElement('svg', { className: 'oguf-gauge', viewBox: '0 0 40 40' },
             React.createElement('circle', {
               className: 'oguf-gauge-track', cx: 20, cy: 20, r: 16, fill: 'none',
-              strokeWidth: lv === 'ok' ? 3 : 4.4,
+              strokeWidth: strokeWidth,
             }),
             React.createElement('circle', {
               className: 'oguf-gauge-arc', cx: 20, cy: 20, r: 16, fill: 'none',
-              strokeWidth: lv === 'ok' ? 3 : 4.4, strokeLinecap: 'round',
-              strokeDasharray: String(GIRTH),
-              strokeDashoffset: String(GIRTH * (1 - arc / 100)),
+              strokeWidth: strokeWidth, strokeLinecap: 'round',
+              strokeDasharray: dashArray,
+              strokeDashoffset: String(dashOffset),
               transform: 'rotate(-90 20 20)',
             })),
-          React.createElement('span', { className: 'oguf-fab-num' }, failed ? '!' : (pct === null ? '…' : String(pct))),
+          loading ? null : React.createElement('span', { className: 'oguf-fab-num' }, failed ? '!' : (pct === null ? '…' : String(pct))),
           flag ? React.createElement('span', { className: 'oguf-fab-flag', title: t.limited }, '!') : null),
         // 展开面板
         open
