@@ -1,149 +1,80 @@
-# dsh-opencode-go-usage
+# dsh-opencode-go
 
 **简体中文** · [English](README.md)
 
-> 本地 fork（0.3.0-dsh.1），基于上游 0.3.0（MIT）。改动：悬浮组件移到左下角、点击面板外收起、每张 key 卡加"切换"按钮（Host 新增 `POST /plugins/dsh-opencode-go-usage/select?name=<池内名称>`，经 `ctx.credentials.set` 改写 `OPENCODE_API_KEY` 与 `OPENCODE_GO_KEY_ACTIVE`）。
+一个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web profile 插件，把 **OpenCode Go** 订阅完整接进来：模型列表实时同步 + 多 key 用量面板与一键切换。
 
-一个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的 WebUI 插件：在页面右侧提供**常驻悬浮组件**，实时展示 **OpenCode Go** 套餐中 **key 池内每个 key** 的用量——**滚动 / 每周 / 每月**三个窗口的已用百分比、进度条与重置倒计时。
+> 由两部分合并而来：`dsh-opencode-go-live`（模型路由）与上游 [`@xiaweiliang060035/dsh-opencode-go-usage`](https://github.com/xiaweiliang060035/dsh-opencode-go-usage) 的本地 fork（用量面板，MIT）。见 [LICENSE](LICENSE)。
 
-## 特性
+## 功能
 
-- **悬浮组件**：紧凑按钮固定在页面右侧边缘，角标实时显示**全部 key 中最差窗口**的百分比；颜色分级（绿 / 橙 / 红色脉冲）让你一眼看出是否有 key 接近额度上限。
-- **展开面板**：点击按钮展开面板，每个 key 一张卡（当前生效 key 带 ★ 标记），展示滚动 / 每周 / 每月用量（进度条 + 百分比 + 距重置时间）；被限流的窗口标 ⚠。
-- **实时刷新**：Host 每 60 秒轮询官方用量端点（可配置），面板自动刷新并提供手动刷新按钮。
-- **自动发现 key 池**：自动读取 `$DSH_HOME/.credentials.yaml` 中的 `OPENCODE_GO_KEY_<名>` 条目——**key 的数量与命名均不写死**；无池时回退显示当前生效键（`OPENCODE_GO_API_KEY`）。
-- **中英双语**：按浏览器语言自动切换。
-- **主题适配**：使用 DSH 主题 token，明暗主题均适配。
+### 1. 模型路由实时同步
 
-## 界面预览
+`@deepseek-ai/dsh-llm-pi-ai` 的目录是静态的，厂商新上的模型要等 dsh 升级才可见。本插件拉取 `GET https://opencode.ai/zen/go/v1/models`，据此改写 `llm-pi-ai` 的 provider route：
 
-![悬浮组件](docs/screenshot.png)
+- 按**官方端点表**（[opencode.ai/docs/go](https://opencode.ai/docs/go)）把模型拆到三条 route：`opencode-go`（openai-completions）、`opencode-go-anthropic`（anthropic-messages）、`opencode-go-responses`（openai-responses）。官方表与 pi-ai 内置目录冲突时**以官方表为准**。
+- Go 端点要求每个请求带 `x-opencode-session` 头（缺失返回 `400 MissingSessionID`），三条 route 都会写入。
+- 内置目录已描述的模型写成裸 `{ id }` 继承容量/compat/思考档位；其余用 `runtime/catalog.json` 的完整条目；未知新 id 默认 Chat Completions。
+- 启动时同步一次，之后按 `modelRefreshMs`（默认 30 分钟）轮询；工具 `oc_go_sync` 可立即同步。
 
-## 工作原理
+### 2. Key 池用量 + 点击切换
 
-**Host 半**（Node ESM）：
+- 读取 `$DSH_HOME/.credentials.yaml` 中的 `OPENCODE_GO_KEY_<名>` 作为 key 池（也可用 `keyNames` 显式指定）。
+- 每 `usageRefreshMs`（默认 60 秒）采样 `GET /zen/go/v1/usage`，悬浮组件展示滚动/每周/每月。
+- 当前生效 key 卡片高亮（品牌色描边 + 左侧强调条）；鼠标移到其他卡片变中性描边并可点击，**点整张卡片即切换**：Host 通过 `ctx.credentials.set` 改写 `OPENCODE_API_KEY`（模型请求实际解析的引用）与 `OPENCODE_GO_KEY_ACTIVE`（高亮标记）。切换只做本地写入并乐观返回，用量百分比后台再刷。
+- 悬浮组件在 **main 列左下角**（运行时量 sidebar 的 grid track，并在其折叠/展开动画期间逐帧跟随）；刷新/关闭为图标按钮；点击面板外收起。
 
-1. 发现 key 池名称——优先使用 `config.keyNames`，否则自动扫描 `.credentials.yaml` 中的 `OPENCODE_GO_KEY_*` 条目。
-2. 通过 `credentials` 服务解析每个 key 的值（环境变量 → 凭证文件 → `.env` 分层）。
-3. 携带 `Authorization: Bearer <key>` 调用官方用量端点：
+## 配置
 
-```http
-GET https://opencode.ai/zen/go/v1/usage
-Authorization: Bearer <API_KEY>
+在 profile 的 `cordis.patch.yml` 里覆盖插件行 `config`：
+
+```yaml
+- id: opencode-go
+  config:
+    keyNames: [qq, gmail]   # 显式 key 池名（不写则扫描 OPENCODE_GO_KEY_* 顶级条目）
+    modelRefreshMs: 1800000 # 模型列表轮询
+    usageRefreshMs: 60000   # 用量轮询
+    usageTimeoutMs: 15000
+    baseUrl: https://opencode.ai/zen/go/v1/usage
+    dshHome: ~/.dsh
 ```
 
-响应示例：
+> 注意：池名写在 `refs:` 下会缩进，插件自动扫描只看顶级条目，所以 `version: 1` 凭证文件请显式设置 `keyNames`。
 
-```json
-{
-  "usage": {
-    "rolling": { "status": "ok", "percent": 9,  "resetsAt": "2026-08-14T07:20:04.810Z" },
-    "weekly":  { "status": "ok", "percent": 12, "resetsAt": "2026-08-17T00:00:00.810Z" },
-    "monthly": { "status": "ok", "percent": 6,  "resetsAt": "2026-09-09T00:41:03.810Z" }
-  }
-}
+## 凭据
+
+```yaml
+version: 1
+refs:
+  OPENCODE_API_KEY: sk-…              # 模型请求实际使用
+  OPENCODE_GO_KEY_qq: sk-…            # 池成员
+  OPENCODE_GO_KEY_gmail: sk-…
+  OPENCODE_GO_KEY_ACTIVE: gmail       # 面板高亮（切换时自动更新）
+records: { … }
 ```
-
-> 该用量端点尚未写入 OpenCode 官方公开文档，由 [farion1231/cc-switch#6433](https://github.com/farion1231/cc-switch/issues/6433) 发现并验证。解析采用防御式处理。
-
-**Client 半**（浏览器 bundle）注册在 `shell.overlay` 槽位，轮询 Host 的 webServer 路由 `/plugins/dsh-opencode-go-usage/snapshot`。**密钥始终不出 Host。**
-
-## 环境要求
-
-- Node.js + DeepSeek Harness **web profile**（默认 `dsh web` profile 已挂载本插件所需的 `webServer`、`credentials`、`timer` 服务）。
 
 ## 安装
 
-### 方式 A：本地包 + `file:` 依赖（推荐）
-
-1. 将插件包目录拷贝到任意位置，例如 `D:\tools\dsh-opencode-go-usage`。
-2. 在 profile 的 `package.json`（如 `$DSH_HOME/profiles/web/package.json`）的 `dependencies` 中加入：
-
-```json
-"@xiaweiliang060035/dsh-opencode-go-usage": "file:D:/tools/dsh-opencode-go-usage"
-```
-
-3. 将包加入 profile 的 bundle 列表（`dsh.profile.bundles`）：
-
-```json
-"dsh": {
-  "profile": {
-    "bundles": [ "...原有...", "dsh-opencode-go-usage" ]
-  }
-}
-```
-
-4. 安装并重启：
+作为 profile 的 bundle 依赖，按 commit 固定：
 
 ```sh
-cd $DSH_HOME/profiles/web
-pnpm install
-# 重启 dsh web
+dsh plugin --profile web add github:ColorlessBoy/dsh-opencode-go#<commit>
 ```
 
-包自带 `cordis.patch.yml`（通过 `dsh.bundle.patch` 声明），插件行会自动组合——**无需手动编辑 patch**。
+包自带 `cordis.patch.yml`，插件行自动组合，无需手改 patch。密钥始终只在 Host 侧使用；webServer 路由只返回名称/百分比/状态/重置时间。
 
-### 方式 B：npm 安装
+## 工具
 
-插件已发布到 npm：`@xiaweiliang060035/dsh-opencode-go-usage`
+- `oc_go_status` — 只读：模型同步时间/数量、key 池与用量、上次错误。
+- `oc_go_sync` — 立即拉取模型列表并写入 routes。
 
-```sh
-cd $DSH_HOME/profiles/web
-pnpm add @xiaweiliang060035/dsh-opencode-go-usage
-```
+## 已知局限
 
-然后将 `"@xiaweiliang060035/dsh-opencode-go-usage"` 加入 profile 的 `dsh.profile.bundles` 列表并重启 `dsh web`。
+- `runtime/catalog.json` 是快照；模型上新想立刻拿到容量/compat 元数据，用 `scripts/generate-catalog.mjs` 重新生成。
+- 官方表未列且家族前缀未命中的新 id 按 Chat Completions + 保守容量处理。
+- 用量端点未写入官方公开文档，响应按防御式解析。
+- 累计目录里 `reasoning: true` 但无 thinking map 的模型（如 `minimax-m3`）在拆分出的 route 上会退化为非推理。
 
-> 插件包含 Host 半（fetch + webServer 路由）与 Client 半（浏览器 bundle）两部分。**仅拷贝到 `plugins/` 目录并用相对路径 patch 注册，只会加载 Host 半**——悬浮图标必须通过上述 bundle 机制加载。
+## 许可
 
-## 配置项
-
-可调参数在插件行 `config` 中覆盖（在 profile 的 `cordis.patch.yml` 里写）：
-
-```yaml
-- id: opencode-go-usage
-  config:
-    keyNames: [go1, go2]      # 可选：显式指定 key 池名称
-    baseUrl: https://opencode.ai/zen/go/v1/usage   # 可选
-    refreshMs: 60000          # 可选：轮询间隔（毫秒）
-    timeoutMs: 15000          # 可选：请求超时（毫秒）
-    dshHome: ~                # 可选：覆盖 DSH home 目录
-    hideCordisPanel: true     # 可选：隐藏左侧栏内置的「Cordis 插件」管理入口
-```
-
-| 键 | 默认值 | 说明 |
-| --- | --- | --- |
-| `keyNames` | 自动发现 | 显式指定 key 池名称（对应 `.credentials.yaml` 中 `OPENCODE_GO_KEY_<名>`） |
-| `baseUrl` | `https://opencode.ai/zen/go/v1/usage` | 用量端点地址 |
-| `refreshMs` | `60000` | Host 轮询间隔（毫秒） |
-| `timeoutMs` | `15000` | 请求超时（毫秒） |
-| `dshHome` | `resolveDshHome()` | 含 `.credentials.yaml` 的 DSH home 目录 |
-| `hideCordisPanel` | `false` | 隐藏左侧栏内置的「Cordis 插件」管理入口（动态插件管理面板） |
-
-## Key 池格式
-
-插件从 `$DSH_HOME/.credentials.yaml`（DSH 标准凭证文件）读取 key。池示例：
-
-```yaml
-OPENCODE_GO_API_KEY: sk-opencode-…      # 当前生效 key
-OPENCODE_GO_KEY_ACTIVE: go2             # 池中哪个条目生效
-OPENCODE_GO_KEY_go1: sk-opencode-…
-OPENCODE_GO_KEY_go2: sk-opencode-…
-OPENCODE_GO_KEY_go3: sk-opencode-…
-```
-
-任意 `OPENCODE_GO_KEY_<名>` 条目都会被自动发现——**key 的数量与命名均不受限制**。如果只有一个 key（无池），只需设置 `OPENCODE_GO_API_KEY`，插件会显示这个单一 key。
-
-## 常见问题
-
-| 现象 | 原因 / 处理 |
-| --- | --- |
-| 悬浮组件显示 `!` | 快照拉取失败——检查 `dsh web` 是否运行、路由 `/plugins/dsh-opencode-go-usage/snapshot` 是否有响应 |
-| 卡片显示 `密钥无效(401)` | 该 key 无效或已过期 |
-| 卡片显示 `网络失败` | Host 无法访问 `opencode.ai`（代理 / 断网 / 超时） |
-| 面板提示"未配置 key" | `.credentials.yaml` 中既无 `OPENCODE_GO_KEY_*` 也无 `OPENCODE_GO_API_KEY` |
-| `⚠ 已限流` | 该窗口额度已用尽（服务端限制） |
-
-## 许可证
-
-MIT
+MIT。用量组件派生自上游 `@xiaweiliang060035/dsh-opencode-go-usage`（MIT），保留其 [LICENSE](LICENSE) 与相关 README 署名。

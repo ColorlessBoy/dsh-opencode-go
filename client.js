@@ -1,15 +1,15 @@
 /**
- * dsh-opencode-go-usage — Client half（分享版 0.2.0）
+ * dsh-opencode-go — Client half
  * ------------------------------------------------------------------
  * 浏览器 bundle（window.__ModuleLoader__.load 格式）。
  * 挂载点：shell.overlay（全帧悬浮层，list 型、无替换风险）。
- * 数据流：fetch('/plugins/dsh-opencode-go-usage/snapshot') 拉 Host 缓存，
+ * 数据流：fetch('/plugins/dsh-opencode-go/snapshot') 拉 Host 缓存，
  *         60s 自动轮询 + 手动强制刷新（?force=1）。
  * 视觉：主题 token（--dsw-alias-*）；三档分级色；按钮角标显示全池最差窗口。
  * 语言：按浏览器语言自动选中/英（navigator.language 前缀 zh → 中文）。
  */
 window.__ModuleLoader__.load({
-  id: '@xiaweiliang060035/dsh-opencode-go-usage',
+  id: 'dsh-opencode-go',
   factory: (require) => {
     var module = { exports: {} }
     var exports = module.exports
@@ -65,7 +65,7 @@ window.__ModuleLoader__.load({
     const t = isZh ? zh : en
 
     // ---- 样式注入（data-plugin-css 标记防重复） ----
-    const CSS_ID = 'dsh-opencode-go-usage/css'
+    const CSS_ID = 'dsh-opencode-go/css'
     if (typeof document !== 'undefined' && document.querySelector('style[data-plugin-css="' + CSS_ID + '"]') === null) {
       const tag = document.createElement('style')
       tag.dataset.pluginCss = CSS_ID
@@ -156,8 +156,8 @@ window.__ModuleLoader__.load({
     }
 
     // ---- 数据路由 ----
-    const API = '/plugins/dsh-opencode-go-usage/snapshot'
-    const API_SELECT = '/plugins/dsh-opencode-go-usage/select'
+    const API = '/plugins/dsh-opencode-go/snapshot'
+    const API_SELECT = '/plugins/dsh-opencode-go/select'
 
     // ---- 工具函数 ----
     // 用量分级：rate-limited 视为最严重；>=85 红，>=60 橙，否则绿；无数据灰
@@ -223,27 +223,37 @@ window.__ModuleLoader__.load({
       const panelRef = React.useRef(null)
       const fabRef = React.useRef(null)
 
-      // “main 列左下角”：sidebar 是 grid 的第一条 track，量出它的宽度作左偏移
+      // “main 列左下角”：sidebar 是 grid 的第一条 track。该 track 带过渡动画，
+      // 只在属性变化那一刻读一次会停在动画中途，所以在动画窗口内逐帧跟随。
       React.useEffect(() => {
-        const measure = () => {
+        let raf = 0
+        const readLeft = () => {
           const layer = document.querySelector('[data-shell-overlay]')
           const frame = layer && layer.parentElement
-          if (!frame) return
+          if (!frame) return null
           const track = getComputedStyle(frame).gridTemplateColumns.split(' ').filter(Boolean)[0]
-          setLeft(frame.getBoundingClientRect().left + (parseFloat(track) || 0) + 14)
+          return frame.getBoundingClientRect().left + (parseFloat(track) || 0) + 14
         }
-        measure()
+        const settle = () => {
+          cancelAnimationFrame(raf)
+          const end = performance.now() + 450
+          const step = () => {
+            const next = readLeft()
+            if (next !== null) setLeft((prev) => (prev === next ? prev : next))
+            raf = performance.now() < end ? requestAnimationFrame(step) : 0
+          }
+          step()
+        }
+        settle()
         const layer = document.querySelector('[data-shell-overlay]')
         const frame = layer && layer.parentElement
-        const ro = typeof ResizeObserver !== 'undefined' && frame ? new ResizeObserver(measure) : null
-        if (ro) ro.observe(frame)
-        const mo = typeof MutationObserver !== 'undefined' && frame ? new MutationObserver(measure) : null
+        const mo = typeof MutationObserver !== 'undefined' && frame ? new MutationObserver(settle) : null
         if (mo) mo.observe(frame, { attributes: true, attributeFilter: ['style', 'data-sidebar-collapsed'] })
-        window.addEventListener('resize', measure)
+        window.addEventListener('resize', settle)
         return () => {
-          if (ro) ro.disconnect()
+          cancelAnimationFrame(raf)
           if (mo) mo.disconnect()
-          window.removeEventListener('resize', measure)
+          window.removeEventListener('resize', settle)
         }
       }, [])
       const posStyle = left === null ? undefined : { left: left + 'px' }
@@ -390,7 +400,7 @@ window.__ModuleLoader__.load({
       // （默认不隐藏；需要隐藏时在 profile 的 patch 里给本插件行加 config）
       if (config && config.hideCordisPanel && typeof document !== 'undefined') {
         const hid = document.createElement('style')
-        hid.dataset.pluginCss = 'dsh-opencode-go-usage/hide-cordis'
+        hid.dataset.pluginCss = 'dsh-opencode-go/hide-cordis'
         hid.textContent = 'button[aria-label="Cordis 插件"], button[aria-label="Cordis plugins"] { display: none !important; }'
         document.head.appendChild(hid)
       }

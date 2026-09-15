@@ -1,32 +1,25 @@
 {
-  "name": "@xiaweiliang060035/dsh-opencode-go-usage",
-  "version": "0.3.0-dsh.1",
-  "description": "DSH (DeepSeek Harness) web plugin — floating widget showing real-time OpenCode Go subscription usage (rolling / weekly / monthly) for every API key. 悬浮实时展示 opencode-go 各 key 用量。",
+  "name": "dsh-opencode-go",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness plugin for OpenCode Go: live model routes with protocol split and the required session header, plus a key-pool usage widget with click-to-switch.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/xiaweiliang060035/dsh-opencode-go-usage.git"
+    "url": "https://github.com/ColorlessBoy/dsh-opencode-go.git"
   },
-  "homepage": "https://github.com/xiaweiliang060035/dsh-opencode-go-usage#readme",
-  "keywords": [
-    "deepseek-harness",
-    "dsh",
-    "dsh-plugin",
-    "opencode",
-    "opencode-go",
-    "usage",
-    "quota"
-  ],
   "license": "MIT",
   "type": "module",
   "main": "./index.js",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
   "files": [
     "index.js",
     "client.js",
     "cordis.patch.yml",
+    "runtime",
     "README.md",
     "README.zh.md",
-    "LICENSE",
-    "docs/screenshot.png"
+    "LICENSE"
   ],
   "exports": {
     ".": "./index.js",
@@ -38,11 +31,11 @@
       "patch": "./cordis.patch.yml"
     },
     "client": {
-      "inject": [
-        "@deepseek-ai/dsh-client-runtime"
-      ],
       "platform": "web"
     }
+  },
+  "scripts": {
+    "generate-catalog": "node scripts/generate-catalog.mjs"
   },
   "peerDependencies": {
     "react": "^18.2.0",

@@ -1,4 +1,5 @@
-# 插件行（bundles 机制：profile 的 dsh.profile.bundles 引入本包后自动合并此 patch）
+# One row for the whole OpenCode Go integration: live model routes + key pool
+# usage widget and switching.
 - insert:
-    - id: opencode-go-usage
-      name: '@xiaweiliang060035/dsh-opencode-go-usage'
+    - id: opencode-go
+      name: dsh-opencode-go

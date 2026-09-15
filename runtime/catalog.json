@@ -1,0 +1,401 @@
+{
+  "generatedAt": "2026-09-15T07:52:08.847Z",
+  "provenance": {
+    "piAi": "packages/llm/llm-pi-ai/node_modules/@earendil-works/pi-ai/dist/providers/data/opencode-go.json",
+    "modelsDev": "/Users/bilibili/.cache/opencode/models.json",
+    "live": "/var/folders/lg/kz9gfnyx57j61d02vl_m2sv80000gn/T/opencode/zo-models.json",
+    "officialApi": "https://opencode.ai/docs/go (Endpoints, fetched 2026-09-15)"
+  },
+  "routes": {
+    "opencode-go": {
+      "api": "openai-completions",
+      "baseURL": "https://opencode.ai/zen/go/v1"
+    },
+    "opencode-go-anthropic": {
+      "api": "anthropic-messages",
+      "baseURL": "https://opencode.ai/zen/go"
+    },
+    "opencode-go-responses": {
+      "api": "openai-responses",
+      "baseURL": "https://opencode.ai/zen/go/v1"
+    }
+  },
+  "hintRoutes": [
+    {
+      "prefix": "qwen",
+      "route": "opencode-go-anthropic"
+    },
+    {
+      "prefix": "minimax",
+      "route": "opencode-go-anthropic"
+    },
+    {
+      "prefix": "grok",
+      "route": "opencode-go-responses"
+    },
+    {
+      "prefix": "gpt-",
+      "route": "opencode-go-responses"
+    },
+    {
+      "prefix": "muse",
+      "route": "opencode-go-responses"
+    }
+  ],
+  "byId": {
+    "minimax-m3": {
+      "route": "opencode-go-anthropic",
+      "entry": {
+        "name": "MiniMax-M3",
+        "contextWindow": 1000000,
+        "maxTokens": 131072,
+        "input": [
+          "text",
+          "image"
+        ]
+      }
+    },
+    "minimax-m2.7": {
+      "route": "opencode-go-anthropic",
+      "entry": {
+        "name": "MiniMax-M2.7",
+        "contextWindow": 204800,
+        "maxTokens": 131072,
+        "input": [
+          "text"
+        ]
+      }
+    },
+    "minimax-m2.5": {
+      "route": "opencode-go-anthropic",
+      "entry": {
+        "name": "MiniMax-M2.5",
+        "contextWindow": 204800,
+        "maxTokens": 65536,
+        "input": [
+          "text"
+        ]
+      }
+    },
+    "kimi-k3": {
+      "route": "opencode-go"
+    },
+    "kimi-k2.7-code": {
+      "route": "opencode-go"
+    },
+    "kimi-k2.6": {
+      "route": "opencode-go"
+    },
+    "longcat-2.0": {
+      "route": "opencode-go"
+    },
+    "kimi-k2.5": {
+      "route": "opencode-go",
+      "entry": {
+        "name": "Kimi K2.5",
+        "contextWindow": 262144,
+        "maxTokens": 65536,
+        "input": [
+          "text",
+          "image"
+        ]
+      }
+    },
+    "glm-5.2": {
+      "route": "opencode-go"
+    },
+    "glm-5.3-flash": {
+      "route": "opencode-go"
+    },
+    "glm-5.3": {
+      "route": "opencode-go"
+    },
+    "glm-5.1": {
+      "route": "opencode-go"
+    },
+    "glm-5": {
+      "route": "opencode-go",
+      "entry": {
+        "name": "GLM-5",
+        "contextWindow": 202752,
+        "maxTokens": 32768,
+        "input": [
+          "text"
+        ]
+      }
+    },
+    "deepseek-v4-pro": {
+      "route": "opencode-go"
+    },
+    "deepseek-v4-flash": {
+      "route": "opencode-go"
+    },
+    "deepseek-flash": {
+      "route": "opencode-go",
+      "entry": {
+        "name": "deepseek-flash",
+        "contextWindow": 262144,
+        "maxTokens": 32768,
+        "input": [
+          "text"
+        ],
+        "compat": {
+          "supportsStore": false,
+          "supportsDeveloperRole": false,
+          "maxTokensField": "max_tokens",
+          "requiresReasoningContentOnAssistantMessages": true,
+          "thinkingFormat": "deepseek"
+        }
+      }
+    },
+    "deepseek-v4.1-flash": {
+      "route": "opencode-go",
+      "entry": {
+        "name": "DeepSeek V4.1 Flash",
+        "contextWindow": 1000000,
+        "maxTokens": 384000,
+        "input": [
+          "text",
+          "image"
+        ],
+        "reasoningEfforts": {
+          "low": "low",
+          "high": "high",
+          "max": "max"
+        },
+        "compat": {
+          "supportsStore": false,
+          "supportsDeveloperRole": false,
+          "maxTokensField": "max_tokens",
+          "requiresReasoningContentOnAssistantMessages": true,
+          "thinkingFormat": "deepseek"
+        }
+      }
+    },
+    "deepseek-v4-flash-vision-exp": {
+      "route": "opencode-go"
+    },
+    "qwen3.7-max": {
+      "route": "opencode-go-anthropic",
+      "entry": {
+        "name": "Qwen3.7 Max",
+        "contextWindow": 1000000,
+        "maxTokens": 65536,
+        "input": [
+          "text"
+        ]
+      }
+    },
+    "qwen3.8-max": {
+      "route": "opencode-go-anthropic",
+      "entry": {
+        "name": "Qwen3.8 Max",
+        "contextWindow": 1000000,
+        "maxTokens": 131072,
+        "input": [
+          "text",
+          "image"
+        ],
+        "reasoningEfforts": {
+          "low": "low",
+          "medium": "medium",
+          "xhigh": "xhigh"
+        }
+      }
+    },
+    "qwen3.8-flash": {
+      "route": "opencode-go-anthropic",
+      "entry": {
+        "name": "Qwen3.8 Flash",
+        "contextWindow": 1000000,
+        "maxTokens": 131072,
+        "input": [
+          "text",
+          "image"
+        ],
+        "reasoningEfforts": {
+          "low": "low",
+          "medium": "medium",
+          "xhigh": "xhigh"
+        }
+      }
+    },
+    "qwen3.7-plus": {
+      "route": "opencode-go-anthropic",
+      "entry": {
+        "name": "Qwen3.7 Plus",
+        "contextWindow": 1000000,
+        "maxTokens": 65536,
+        "input": [
+          "text",
+          "image"
+        ]
+      }
+    },
+    "qwen3.6-plus": {
+      "route": "opencode-go-anthropic",
+      "entry": {
+        "name": "Qwen3.6 Plus",
+        "contextWindow": 1000000,
+        "maxTokens": 65536,
+        "input": [
+          "text",
+          "image"
+        ]
+      }
+    },
+    "qwen3.5-plus": {
+      "route": "opencode-go-anthropic",
+      "entry": {
+        "name": "Qwen3.5 Plus",
+        "contextWindow": 262144,
+        "maxTokens": 65536,
+        "input": [
+          "text",
+          "image"
+        ]
+      }
+    },
+    "mimo-v2-pro": {
+      "route": "opencode-go",
+      "entry": {
+        "name": "MiMo V2 Pro",
+        "contextWindow": 1048576,
+        "maxTokens": 128000,
+        "input": [
+          "text"
+        ]
+      }
+    },
+    "mimo-v2-omni": {
+      "route": "opencode-go",
+      "entry": {
+        "name": "MiMo V2 Omni",
+        "contextWindow": 262144,
+        "maxTokens": 128000,
+        "input": [
+          "text",
+          "image"
+        ]
+      }
+    },
+    "mimo-v2.5-pro": {
+      "route": "opencode-go"
+    },
+    "mimo-v2.5": {
+      "route": "opencode-go"
+    },
+    "hy4-preview": {
+      "route": "opencode-go"
+    },
+    "hy3": {
+      "route": "opencode-go"
+    },
+    "hy3-preview": {
+      "route": "opencode-go",
+      "entry": {
+        "name": "hy3-preview",
+        "contextWindow": 262144,
+        "maxTokens": 32768,
+        "input": [
+          "text"
+        ]
+      }
+    },
+    "gpt-5.6-luna": {
+      "route": "opencode-go-responses",
+      "entry": {
+        "name": "GPT-5.6 Luna",
+        "contextWindow": 1050000,
+        "maxTokens": 128000,
+        "input": [
+          "text",
+          "image"
+        ],
+        "reasoningEfforts": {
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh",
+          "max": "max"
+        }
+      }
+    },
+    "grok-4.5": {
+      "route": "opencode-go-responses",
+      "entry": {
+        "name": "Grok 4.5",
+        "contextWindow": 500000,
+        "maxTokens": 500000,
+        "input": [
+          "text",
+          "image"
+        ],
+        "reasoningEfforts": {
+          "low": "low",
+          "medium": "medium",
+          "high": "high"
+        }
+      }
+    },
+    "grok-4.6": {
+      "route": "opencode-go-responses",
+      "entry": {
+        "name": "Grok 4.6",
+        "contextWindow": 500000,
+        "maxTokens": 500000,
+        "input": [
+          "text",
+          "image"
+        ],
+        "reasoningEfforts": {
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh"
+        }
+      }
+    },
+    "muse-spark-1.3-contributor": {
+      "route": "opencode-go-responses",
+      "entry": {
+        "name": "Muse Spark 1.3 Contributor",
+        "contextWindow": 1048576,
+        "maxTokens": 131072,
+        "input": [
+          "text",
+          "image"
+        ],
+        "reasoningEfforts": {
+          "minimal": "minimal",
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh"
+        }
+      }
+    },
+    "muse-spark-1.2-contributor": {
+      "route": "opencode-go-responses",
+      "entry": {
+        "name": "Muse Spark 1.2 Contributor",
+        "contextWindow": 1048576,
+        "maxTokens": 131072,
+        "input": [
+          "text",
+          "image"
+        ],
+        "reasoningEfforts": {
+          "minimal": "minimal",
+          "low": "low",
+          "medium": "medium",
+          "high": "high",
+          "xhigh": "xhigh"
+        }
+      }
+    },
+    "omen-alpha": {
+      "route": "opencode-go"
+    }
+  }
+}
