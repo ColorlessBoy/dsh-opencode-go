@@ -36,8 +36,9 @@ window.__ModuleLoader__.load({
       network: '网络失败',
       unauthorized: '密钥无效(401)',
       badJson: '响应解析失败',
-      fabTitle: 'OpenCode Go 用量（角标=当前key最差窗口，点击展开）',
+      fabTitle: 'OpenCode Go 用量（圆环=当前 key 最紧窗口已用，点击展开）',
       clickToSwitch: '点击切换到此 key',
+      left: '剩',
     }
     const en = {
       title: 'OpenCode Go usage',
@@ -58,8 +59,9 @@ window.__ModuleLoader__.load({
       network: 'Network error',
       unauthorized: 'Invalid key (401)',
       badJson: 'Response parse failed',
-      fabTitle: 'OpenCode Go usage (badge = worst window of the current key)',
+      fabTitle: 'OpenCode Go usage (ring = worst window of the active key)',
       clickToSwitch: 'Click to switch to this key',
+      left: 'left',
     }
     const isZh = typeof navigator !== 'undefined' && /^zh/i.test(navigator.language || '')
     const t = isZh ? zh : en
@@ -72,29 +74,38 @@ window.__ModuleLoader__.load({
       tag.textContent = `
 .oguf-fab {
   position: fixed; left: 14px; bottom: 14px;
-  z-index: 1000; width: 38px; height: 38px; border-radius: 11px;
+  z-index: 1000; width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(150deg, var(--dsw-alias-bg-layer-2), var(--dsw-alias-bg-overlay));
+  background: var(--dsw-alias-bg-overlay);
   border: 1px solid var(--dsw-alias-border-l2);
-  box-shadow: 0 2px 8px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.03);
-  cursor: pointer; user-select: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,.16);
+  cursor: pointer; user-select: none; padding: 0;
   transition: transform .18s cubic-bezier(.2,.8,.3,1.2), box-shadow .18s ease;
 }
 .oguf-fab:hover { transform: scale(1.08); box-shadow: 0 4px 14px rgba(0,0,0,.26); }
 .oguf-fab:active { transform: scale(.96); }
-.oguf-fab-bars { display: flex; align-items: flex-end; gap: 2.5px; height: 13px; }
-.oguf-fab-bars i { width: 3px; border-radius: 1.5px; background: var(--dsw-alias-label-secondary); transition: background .2s; }
-.oguf-fab:hover .oguf-fab-bars i { background: var(--dsw-alias-label-primary); }
-.oguf-fab .oguf-fab-dot {
-  position: absolute; right: -3px; top: -3px; min-width: 15px; height: 15px;
-  border-radius: 7.5px; font-size: 8px; line-height: 15px; text-align: center;
-  padding: 0 2.5px; color: #fff; font-weight: 700;
+/* Severity reads through color AND stroke weight / flag / number, so a color
+   vision deficiency can still tell the levels apart. */
+.oguf-fab.oguf-lv-ok { color: var(--dsw-alias-brand-primary); }
+.oguf-fab.oguf-lv-warn { color: var(--dsw-alias-state-warn-primary); }
+.oguf-fab.oguf-lv-err { color: var(--dsw-alias-state-error-primary); }
+.oguf-fab.oguf-lv-na { color: var(--dsw-alias-label-secondary); }
+.oguf-gauge { position: absolute; inset: 0; }
+.oguf-gauge-track { stroke: var(--dsw-alias-bg-layer-2); }
+.oguf-gauge-arc { stroke: currentColor; transition: stroke-dashoffset .3s ease; }
+.oguf-fab-num {
+  position: relative; font-size: 11px; font-weight: 700;
+  color: var(--dsw-alias-label-primary); font-variant-numeric: tabular-nums;
+}
+.oguf-fab.oguf-lv-warn .oguf-fab-num,
+.oguf-fab.oguf-lv-err .oguf-fab-num { color: var(--dsw-alias-label-primary); }
+.oguf-fab-flag {
+  position: absolute; right: -2px; top: -2px; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--dsw-alias-state-error-primary); color: #fff;
+  font-size: 11px; line-height: 16px; text-align: center; font-weight: 800;
   border: 1.5px solid var(--dsw-alias-bg-overlay);
 }
-.oguf-fab.oguf-lv-ok .oguf-fab-dot { background: var(--dsw-alias-state-success-primary); }
-.oguf-fab.oguf-lv-warn .oguf-fab-dot { background: var(--dsw-alias-state-warn-primary); }
-.oguf-fab.oguf-lv-err .oguf-fab-dot { background: var(--dsw-alias-state-error-primary); animation: oguf-pulse 1.2s infinite; }
-.oguf-fab.oguf-lv-na .oguf-fab-dot { background: var(--dsw-alias-label-secondary); }
+.oguf-fab.oguf-pulse { animation: oguf-pulse 1.2s infinite; }
 @keyframes oguf-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(220,60,60,.45); } 50% { box-shadow: 0 0 0 5px rgba(220,60,60,0); } }
 
 .oguf-panel {
@@ -183,7 +194,7 @@ window.__ModuleLoader__.load({
           const lv = level(win.percent, win.status)
           const p = (typeof win.percent === 'number' && Number.isFinite(win.percent)) ? win.percent : -1
           if (!w || LV_RANK[lv] > LV_RANK[w.lv] || (LV_RANK[lv] === LV_RANK[w.lv] && p > w.p)) {
-            w = { lv: lv, p: p, name: e.name, key: k }
+            w = { lv: lv, p: p, name: e.name, key: k, resetsAt: win.resetsAt, status: win.status }
           }
         }
       }
@@ -354,22 +365,41 @@ window.__ModuleLoader__.load({
 
       const worst = worstActiveOf(data)
       const lv = failed ? 'err' : (worst ? worst.lv : 'na')
-      const badge = failed ? '!' : (worst ? (worst.p >= 0 ? String(Math.round(worst.p)) : '⚠') : '…')
+      // 数字=已用%；圆环弧长=已用%；剩余量放进 tooltip
+      const pct = failed || !worst || !(worst.p >= 0) ? null : Math.round(worst.p)
+      const arc = pct === null ? (failed ? 100 : 0) : Math.max(0, Math.min(100, pct))
+      const remaining = pct === null ? null : Math.max(0, 100 - pct)
+      const fabTitleText = failed
+        ? t.failed
+        : pct === null
+          ? t.fabTitle
+          : `${t.title} · ${WIN_LABEL[worst.key]} ${pct}% · ${t.left} ${remaining}% · ${fmtRemain(worst.resetsAt)}`
+      const flag = !failed && lv === 'err'
+      const GIRTH = 2 * Math.PI * 16
 
       return React.createElement(React.Fragment, null,
-        // 常驻悬浮图标（柱状图 = 三窗口用量语义）
+        // 常驻悬浮件：环形用量表（弧长=已用，中间数字；粗细/感叹号给出颜色之外的严重度）
         React.createElement('button', {
           ref: fabRef,
-          className: 'oguf-fab oguf-lv-' + lv,
+          className: 'oguf-fab oguf-lv-' + lv + (lv === 'err' ? ' oguf-pulse' : ''),
           style: posStyle,
-          title: t.fabTitle,
+          title: fabTitleText,
           onClick: () => setOpen(!open),
         },
-          React.createElement('span', { className: 'oguf-fab-bars' },
-            React.createElement('i', { style: { height: '38%' } }),
-            React.createElement('i', { style: { height: '62%' } }),
-            React.createElement('i', { style: { height: '88%' } })),
-          React.createElement('span', { className: 'oguf-fab-dot' }, badge)),
+          React.createElement('svg', { className: 'oguf-gauge', viewBox: '0 0 40 40' },
+            React.createElement('circle', {
+              className: 'oguf-gauge-track', cx: 20, cy: 20, r: 16, fill: 'none',
+              strokeWidth: lv === 'ok' ? 3 : 4.4,
+            }),
+            React.createElement('circle', {
+              className: 'oguf-gauge-arc', cx: 20, cy: 20, r: 16, fill: 'none',
+              strokeWidth: lv === 'ok' ? 3 : 4.4, strokeLinecap: 'round',
+              strokeDasharray: String(GIRTH),
+              strokeDashoffset: String(GIRTH * (1 - arc / 100)),
+              transform: 'rotate(-90 20 20)',
+            })),
+          React.createElement('span', { className: 'oguf-fab-num' }, failed ? '!' : (pct === null ? '…' : String(pct))),
+          flag ? React.createElement('span', { className: 'oguf-fab-flag', title: t.limited }, '!') : null),
         // 展开面板
         open
           ? React.createElement('div', { ref: panelRef, className: 'oguf-panel', style: posStyle },
