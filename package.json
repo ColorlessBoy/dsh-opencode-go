@@ -1,0 +1,53 @@
+{
+  "name": "@xiaweiliang060035/dsh-opencode-go-usage",
+  "version": "0.3.0-dsh.1",
+  "description": "DSH (DeepSeek Harness) web plugin — floating widget showing real-time OpenCode Go subscription usage (rolling / weekly / monthly) for every API key. 悬浮实时展示 opencode-go 各 key 用量。",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiaweiliang060035/dsh-opencode-go-usage.git"
+  },
+  "homepage": "https://github.com/xiaweiliang060035/dsh-opencode-go-usage#readme",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "opencode",
+    "opencode-go",
+    "usage",
+    "quota"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "LICENSE",
+    "docs/screenshot.png"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime"
+      ],
+      "platform": "web"
+    }
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-credentials": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-home-paths": "^0.1.0-rc.6"
+  }
+}
